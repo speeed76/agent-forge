@@ -2,45 +2,126 @@
 
 Work through every step in order. Do not skip steps.
 
-## Step 1: Git Cleanup
-1. Check `git status` for uncommitted changes
-2. Commit outstanding work (atomic commits by domain)
-3. Push all to remote
-4. Verify remote is up-to-date: `git log --oneline origin/BRANCH..HEAD` should be empty
-5. Drop stale stashes if contents already committed
+## Model Routing
 
-## Step 2: Behavioral Knowledge Checkpoint
+| Phase | Model | Why |
+|-------|-------|-----|
+| Builds + scripts + health | `haiku` | Bash execution, pass/fail |
+| Write session entries | `sonnet` | Templated writing with session context |
+| Update CLAUDE.md files | `sonnet` | Targeted doc edits |
+| [Tracker reconciliation] | `haiku` | Script execution |
+| Performance review | main context | Requires full conversation analysis |
+| Final confirmation | main context | Assemble + report |
+
+## Step 1: Haiku — Preflight Checks
+
+Launch Haiku subagent (`model: "haiku"`, `subagent_type: "Bash"`):
+```
+Run these commands and return all output:
+1. [build command — e.g., cd project && npm run build 2>&1 | tail -8]
+2. [test command — e.g., cd project && npm test 2>&1 | tail -20]
+3. [codemap/context snapshot — e.g., python3 scripts/codemap.py update]
+4. [health check — e.g., bash scripts/agent-health.sh]
+```
+
+## Step 2: Sonnet — Write Session Entry
+
+Launch Sonnet subagent (`model: "sonnet"`):
+
+Read SESSION.md. Insert at TOP:
+
+**Handover block:**
+```
+## Next Session Handover — [date] [time]
+### Focus: [one-line description]
+### State at session close
+[2-4 sentences]
+### Exact first action
+[one concrete sentence + command]
+### Files touched this session that matter next session
+[bulleted list]
+### Decisions / context to preserve
+[reasoning, failed attempts, mid-investigation state]
+```
+
+**Wrap entry:**
+```
+## Session Wrap — [date]
+### Work completed
+[numbered list — what changed and why, not just file names]
+### Files modified
+| File | Change |
+|------|--------|
+### Open issues / next session priorities
+[bulleted list]
+### System state at close
+- Build: [from Step 1]
+- Services: [running/stopped]
+```
+
+## Step 3: Sonnet — Update CLAUDE.md (if needed)
+
+Only if source code was modified. Launch Sonnet subagent:
+- Remove completed TODOs, add new ones
+- Update architecture sections if changed
+- State current facts, not changelog entries
+
+## Step 4: Behavioral Knowledge Checkpoint
+
 For each subsystem deeply explored this session:
 1. Does a behavioral rule file exist in `.claude/rules/`?
 2. If no: write one using the behavioral-rule template
 3. If yes: does it need updating based on what was learned?
 4. Update the `<!-- Last reviewed: -->` date
 
-## Step 3: Decision Records
-For significant "why" decisions made this session:
-1. Write a Y-statement ADR in `docs/decisions/`
-2. Format: "In the context of [X], facing [Y], we decided [Z]..."
-3. Include rejected alternatives
+## Step 5: Git Wrap (MANDATORY — never skip)
 
-## Step 4: Incident Records
-For any self-detected errors this session:
-1. Record with structured format: trigger → root_cause → prevention → scope_check
-2. Ensure a prevention artifact was created (rule file update, code guard, standing rule)
+Launch Haiku subagent:
+```
+1. git status --short | head -20
+2. git branch --show-current
+3. git log --oneline @{upstream}..HEAD 2>/dev/null || echo "NO_UPSTREAM"
+4. git stash list
 
-## Step 5: Stale Check
-Review `.claude/rules/` files for the domains worked on:
-1. Is any behavioral knowledge now outdated?
-2. Were source files changed that would invalidate existing summaries?
-3. Flag stale files for update
+If uncommitted changes: stage and commit.
+If unpushed commits: git push origin $(git branch --show-current)
 
-## Step 6: Session Continuation (if needed)
-If work will continue in a future session:
-1. Write SESSION_NEXT.md with: current state, next steps, anything that would be lost
-2. Include the git branch to continue on
+Verify:
+5. git status --short         # must be empty
+6. git log --oneline @{upstream}..HEAD  # must be empty
+7. git branch -vv | grep "^\*"
+```
 
-## Step 7: Summary
-Output a brief wrap summary:
-- Commits: N commits pushed to [branch]
-- Knowledge: N rule files created/updated, N ADRs written
-- Incidents: N recorded (or "none")
-- Continuation: SESSION_NEXT.md written / session complete
+**Exit criteria:** Working tree clean, 0 unpushed commits, no stale stashes.
+
+## Step 6: [Tracker Reconciliation — if applicable]
+
+Compare tracker state vs actual commits. PATCH any drift. Post session_end event.
+
+## Step 7: Performance Review (MANDATORY)
+
+Review the full conversation for:
+- Prompting errors, omissions, operational rule violations
+- Structural session mistakes (context management, scope creep)
+- What the better approach would have been
+
+Append findings to `[OPERATOR_FEEDBACK.md]`. Focus: mistakes and improvements, not accomplishments. A session with no errors worth noting is itself worth documenting.
+
+## Step 8: Final Health Check
+
+Launch Haiku subagent:
+```
+[health check script]
+```
+If any FAIL: run with `--fix` flag.
+
+## Step 9: Confirm to User
+
+Assemble outputs from all subagents. Report:
+- What was written to SESSION.md
+- What was updated in CLAUDE.md files
+- Build/test results (pass/fail)
+- **Git state:** branch, pushed (yes/no), clean (yes/no)
+- [Tracker: reconciled/correct/total]
+- Health check result
+- Confirm: **"Session is safe to close."**

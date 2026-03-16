@@ -2,6 +2,20 @@
 
 When given a project specification, generate a complete agent architecture by working through these phases.
 
+## Phase 0: Operator Preferences
+
+Read `knowledge/operator-preferences.md` before generating anything. These preferences shape every output:
+
+- **Agent-owned git** — every project gets git protocol, health check in `/start`, cleanup in `/wrap`
+- **Sprint discipline guard** — request classification (ON-PATH / DEVIATION / SCOPE CREEP) with `sudo:` override
+- **Model delegation** — Haiku for data gathering, Sonnet for writing, main context for decisions
+- **Performance review** — `/wrap` reviews operator interaction quality, appends to feedback file
+- **Incident-driven safety** — each failure → 1-line invariant rule + incident report
+- **Governance hierarchy** — explicit authority chain in invariants when multiple governance docs exist
+- **Verification standard** — every task must produce something a human can verify
+
+These are not optional extras — they are core architectural elements proven across 70+ production sessions.
+
 ## Phase 1: Domain Analysis
 
 Read the project spec and extract:
@@ -83,13 +97,14 @@ Each rule file should be 30-80 lines. If longer, split into sub-contexts. If sho
 Create `.claude/commands/` for recurring workflows:
 
 **Minimum set:**
-- `start.md` — Session startup (health check, orientation)
-- `wrap.md` — Session close (push, update docs, write behavioral learnings)
+- `start.md` — Session startup (git health, mode decision, briefing). Include model routing table.
+- `wrap.md` — Session close (build check, session entry, CLAUDE.md update, behavioral checkpoint, git cleanup, performance review). Include model routing table.
+- `res.md` — Fast session resume (skip full orientation, go straight to handover block)
 
 **Common additions:**
 - `test.md` — Run tests with domain-aware interpretation
 - `deploy.md` — Deployment workflow
-- `review.md` — Code review checklist
+- `perf-review.md` — Standalone operator performance review (also runs as part of `/wrap`)
 
 ## Phase 5: Memory Structure
 
@@ -140,6 +155,11 @@ Before delivering:
 - [ ] No duplicated content across files
 - [ ] Safety rules are in root CLAUDE.md (always loaded)
 - [ ] Domain terms defined where they are used (in rule files), not globally
-- [ ] Session protocol (start/wrap) exists
+- [ ] Session protocol exists: `/start` (with model routing), `/wrap` (with perf-review), `/res`
 - [ ] MEMORY.md under 200 lines
 - [ ] Token budget estimated: always-loaded < 1,500 tokens
+- [ ] Agent-owned git protocol in root CLAUDE.md
+- [ ] Sprint discipline guard section in root CLAUDE.md (or equivalent)
+- [ ] Governance authority chain in invariants (if multiple governance docs)
+- [ ] `/wrap` includes performance review step
+- [ ] Invariants file has incident-driven rules section (empty at scaffold, grows over time)

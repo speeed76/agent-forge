@@ -87,11 +87,13 @@ When the operator says "you should have known that" or "that's not how it works,
 
 | Working on... | Read |
 |---------------|------|
-| Scaffolding a new project | `knowledge/scaffolding-protocol.md` + `templates/` |
+| Scaffolding a new project | `knowledge/scaffolding-protocol.md` + `knowledge/operator-preferences.md` + `templates/` |
 | Reviewing an existing agent | `knowledge/review-checklist.md` + `docs/anti-patterns/` |
 | Training an operator | `docs/operator-guide/` + `knowledge/incidents.md` |
+| Pipeline architecture | `docs/proposals/closed-loop-pipeline.md` + `knowledge/assessments/` |
 | Understanding the research foundation | `docs/research/` |
 | Context architecture patterns | `docs/patterns/` |
+| Operator style & preferences | `knowledge/operator-preferences.md` |
 
 ## File Conventions
 
