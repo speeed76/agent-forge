@@ -227,6 +227,18 @@ run_sprint() {
   return 0
 }
 
+_with_timeout() {
+  local secs="$1"; shift
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$secs" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$secs" "$@"
+  else
+    # No timeout binary available — run unbounded
+    "$@"
+  fi
+}
+
 _run_claude_sprint() {
   local sprint_file="$1"
   local workdir="$2"
@@ -235,14 +247,19 @@ _run_claude_sprint() {
   local log_file="$5"
 
   local exit_code=0
+  # Pipe sprint file via stdin to avoid quoting issues with multi-line content.
+  # Unset CLAUDECODE to allow launching claude from within a claude session.
   (
+    unset CLAUDECODE
     cd "$workdir"
-    timeout "$timeout_sec" claude \
-      --print "$(cat "$sprint_file")" \
+    _with_timeout "$timeout_sec" claude \
+      --print \
       --model "$model" \
       --dangerously-skip-permissions \
+      < "$sprint_file" \
       2>&1
-  ) | tee "$log_file" || exit_code=${PIPESTATUS[0]}
+  ) | tee "$log_file"
+  exit_code=${PIPESTATUS[0]}
 
   return $exit_code
 }
