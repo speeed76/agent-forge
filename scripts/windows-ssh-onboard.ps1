@@ -332,5 +332,5 @@ if ($tailscaleIP -ne "100.77.204.17") {
 }
 Write-Host ""
 Write-Host "  Default shell is cmd.exe. To switch to PowerShell:" -ForegroundColor Gray
-Write-Host "    New-ItemProperty -Path 'HKLM:\SOFTWARE\OpenSSH' -Name DefaultShell -Value 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -PropertyType String -Force" -ForegroundColor Gray
+Write-Host '    New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" -Name DefaultShell -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -PropertyType String -Force' -ForegroundColor Gray
 Write-Host ""
